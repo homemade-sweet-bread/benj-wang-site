@@ -6,8 +6,37 @@
         <title>你好👋</title>
     </head>
 
-    <body>
-        <h1>你好👋</h1>
+    <body style="background-color: black; height: 200vh;">
+        <h1 id="greeting" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10rem; color: white;"></h1>
         <p>这是一个简单的页面</p>
+        
+        <p id="greetingText"></p>
+        <style>
+            @keyframes changeLanguage {
+    0% { content: ''; transform: translateX(-100%); opacity: 0; }
+    12.5% { content: 'Hello'; transform: translateX(-50%); opacity: 0.5; }
+    25% { content: 'Hola'; transform: translateX(0); opacity: 1; }
+    37.5% { content: 'Bonjour'; transform: translateX(50%); opacity: 0.5; }
+    50% { content: 'Ciao'; transform: translateX(100%); opacity: 0; }
+    62.5% { content: 'こんにちは'; transform: translateX(50%); opacity: 0.5; }
+    75% { content: '안녕하세요'; transform: translateX(0); opacity: 1; }
+    87.5% { content: '你好'; transform: translateX(-50%); opacity: 0.5; }
+    100% { content: ''; transform: translateX(-100%); opacity: 0; }
+}
+            #greeting::after {
+                content: '';
+                animation: changeLanguage linear;
+                animation-duration: 8s;
+                animation-timeline: scroll();
+            }
+            body {
+                scroll-snap-type: y proximity;
+                scroll-behavior: smooth;
+            }
+            section {
+                height: 100vh;
+                scroll-snap-align: start;
+            }
+        </style>
     </body>
 </html>
