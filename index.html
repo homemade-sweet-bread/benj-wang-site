@@ -1,42 +1,1518 @@
-<!DOCTYPE html>
-<html lang="zh">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>你好👋</title>
-    </head>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#FFF7E8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>小机器人吃果子 · 幼儿编程小游戏</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
 
-    <body style="background-color: black; height: 200vh;">
-        <h1 id="greeting" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10rem; color: white;"></h1>
-        <p>这是一个简单的页面</p>
-        
-        <p id="greetingText"></p>
-        <style>
-            @keyframes changeLanguage {
-    0% { content: ''; transform: translateX(-100%); opacity: 0; }
-    12.5% { content: 'Hello'; transform: translateX(-50%); opacity: 0.5; }
-    25% { content: 'Hola'; transform: translateX(0); opacity: 1; }
-    37.5% { content: 'Bonjour'; transform: translateX(50%); opacity: 0.5; }
-    50% { content: 'Ciao'; transform: translateX(100%); opacity: 0; }
-    62.5% { content: 'こんにちは'; transform: translateX(50%); opacity: 0.5; }
-    75% { content: '안녕하세요'; transform: translateX(0); opacity: 1; }
-    87.5% { content: '你好'; transform: translateX(-50%); opacity: 0.5; }
-    100% { content: ''; transform: translateX(-100%); opacity: 0; }
-}
-            #greeting::after {
-                content: '';
-                animation: changeLanguage linear;
-                animation-duration: 8s;
-                animation-timeline: scroll();
-            }
-            body {
-                scroll-snap-type: y proximity;
-                scroll-behavior: smooth;
-            }
-            section {
-                height: 100vh;
-                scroll-snap-align: start;
-            }
-        </style>
-    </body>
+  :root {
+    --ink: #3D3A4E;
+    --ink-soft: #6B6680;
+    --paper: #FFFDF7;
+    --line: #E8D9BC;
+    --blue: #38A9D8;
+    --green: #3FBF74;
+    --yellow: #FFC93C;
+    --pad: clamp(54px, 7.6dvh, 68px);
+    --board: min(92vw, 46dvh, 440px);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(90% 55% at 10% 0%, #E8F7FF 0%, rgba(232,247,255,0) 62%),
+      radial-gradient(80% 55% at 92% 6%, #FFE8F2 0%, rgba(255,232,242,0) 60%),
+      linear-gradient(180deg, #FFFDF7 0%, #FFF6E4 58%, #FFEBD9 100%);
+    background-attachment: fixed;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+
+  button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; touch-action: manipulation; }
+  button:focus-visible { outline: 3px solid #7CC7EA; outline-offset: 3px; }
+
+  #app {
+    min-height: 100dvh;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: clamp(8px, 1.4vh, 16px) clamp(10px, 2vw, 24px) max(10px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: clamp(6px, 1.2vh, 12px);
+  }
+
+  /* ---------------- 顶部 HUD ---------------- */
+  .hud { display: flex; align-items: center; gap: 10px; min-height: 38px; }
+
+  .brand {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 800; letter-spacing: .3px;
+    font-size: clamp(15px, 2.1vw, 19px);
+  }
+  .brand .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #FF6B6B;
+    box-shadow: 0 0 0 4px rgba(255,107,107,.16);
+  }
+
+  .star-pill {
+    display: flex; align-items: center; gap: 5px;
+    margin-left: auto;
+    padding: 5px 13px 5px 11px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 3px 0 rgba(214,199,170,.65);
+    font-weight: 900;
+    font-size: clamp(14px, 1.7vw, 16px);
+    color: #9A7317;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .star-pill:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(214,199,170,.65); }
+  .star-pill .star-ico { color: var(--yellow); text-shadow: 0 1px 0 #EFAE00; font-size: 1.15em; }
+  .star-pill.pop { animation: starPop .55s cubic-bezier(.34,1.56,.64,1); }
+
+  .top-btn {
+    width: clamp(38px, 4.6dvh, 44px);
+    height: clamp(38px, 4.6dvh, 44px);
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 4px 0 rgba(214,199,170,.75), 0 6px 14px rgba(170,150,110,.14);
+    display: grid; place-items: center;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--ink-soft);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .top-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(214,199,170,.75); }
+  .top-btn.off { opacity: .45; }
+
+  /* ---------------- 舞台 ---------------- */
+  .stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 1.1vh, 12px);
+  }
+
+  .level-row {
+    width: var(--board);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+
+  .level-tag {
+    font-weight: 800;
+    font-size: clamp(13px, 1.7vw, 16px);
+    background: #fff;
+    padding: 5px 14px;
+    border-radius: 999px;
+    box-shadow: 0 3px 0 rgba(214,199,170,.6);
+  }
+  .level-tag b { color: var(--blue); font-size: 1.12em; }
+
+  .hint-btn {
+    font-weight: 800;
+    font-size: clamp(12px, 1.6vw, 14px);
+    background: #FFF6D8;
+    color: #9A7317;
+    padding: 6px 13px;
+    border-radius: 999px;
+    box-shadow: 0 3px 0 #EBD48B;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .hint-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #EBD48B; }
+
+  .board-shell { width: var(--board); position: relative; }
+
+  .board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: clamp(4px, .8vh, 7px);
+    padding: clamp(6px, 1vh, 9px);
+    background: #fff;
+    border-radius: clamp(20px, 3vh, 30px);
+    aspect-ratio: 1 / 1;
+    box-shadow:
+      0 9px 0 rgba(226,209,180,.95),
+      0 20px 40px rgba(176,146,104,.18),
+      inset 0 0 0 3px #fff;
+  }
+  .board.shake { animation: boardShake .4s; }
+
+  .cell {
+    position: relative;
+    border-radius: clamp(10px, 1.7vh, 15px);
+    background: #FFF7E9;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    box-shadow: inset 0 -3px 0 rgba(206,183,142,.16);
+  }
+  .cell.alt { background: #FFEFD8; }
+
+  .cell.wall { background: #EFE7D8; }
+  .cell.wall svg { width: 84%; height: 84%; filter: drop-shadow(0 3px 2px rgba(120,105,85,.18)); }
+
+  .fruit {
+    width: 66%;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    place-items: center;
+    filter: drop-shadow(0 3px 2px rgba(160,80,60,.18));
+    animation: fruitFloat 2.8s ease-in-out infinite;
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s;
+    will-change: transform;
+  }
+  .fruit svg { width: 100%; height: 100%; display: block; }
+  .fruit.gone { transform: scale(0) rotate(140deg); opacity: 0; }
+
+  .robot {
+    position: absolute;
+    left: 0; top: 0;
+    width: 0; height: 0;
+    z-index: 5;
+    pointer-events: none;
+    transition:
+      transform .28s cubic-bezier(.33,1.18,.6,1),
+      width .2s ease, height .2s ease;
+    will-change: transform;
+  }
+  .robot-inner {
+    width: 100%; height: 100%;
+    display: grid; place-items: center;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  .robot-inner svg { width: 100%; height: 100%; display: block; }
+  .robot.bump .robot-inner { animation: shake .42s ease-in-out; }
+  .robot.happy .robot-inner { animation: cheer .6s ease-in-out infinite; }
+
+  .hint {
+    width: var(--board);
+    min-height: 32px;
+    margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    font-size: clamp(13px, 1.9vw, 16px);
+    font-weight: 700;
+    color: #7A6A52;
+    line-height: 1.35;
+    padding: 0 4px;
+  }
+
+  /* ---------------- 控制区 ---------------- */
+  .controls {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(6px, 1vh, 10px);
+    width: 100%;
+  }
+
+  .program {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 9px;
+    min-height: calc(var(--pad) * .82);
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: rgba(255,255,255,.78);
+    border-radius: 20px;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.95), 0 5px 16px rgba(180,150,105,.14);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .program::-webkit-scrollbar { display: none; }
+  .program.locked { pointer-events: none; opacity: .75; }
+
+  .chip, .slot {
+    flex: 0 0 auto;
+    width: calc(var(--pad) * .72);
+    height: calc(var(--pad) * .72);
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    font-size: calc(var(--pad) * .42);
+    font-weight: 900;
+    line-height: 1;
+  }
+  .chip {
+    background: linear-gradient(180deg, #FFFFFF, #EAF7FF);
+    color: var(--blue);
+    box-shadow: 0 3px 0 #B9DDEE, inset 0 0 0 2px #D8EFFA;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .chip:active { transform: translateY(2px); box-shadow: 0 1px 0 #B9DDEE, inset 0 0 0 2px #D8EFFA; }
+  .slot { box-shadow: inset 0 0 0 2px #EADDC4; background: rgba(255,255,255,.35); }
+  .slot.next { animation: slotPulse 1.6s ease-in-out infinite; }
+  .slot.next::after {
+    content: "";
+    width: 26%; height: 26%;
+    border-radius: 50%;
+    background: #E7D8BC;
+  }
+
+  .control-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(18px, 5vw, 54px);
+    width: 100%;
+  }
+
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, var(--pad));
+    grid-template-rows: repeat(3, var(--pad));
+    gap: 6px;
+    grid-template-areas:
+      ". up ."
+      "left mid right"
+      ". down .";
+  }
+
+  .pad-btn {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 #DCCDAF, 0 8px 16px rgba(176,146,104,.15);
+    display: grid; place-items: center;
+    font-size: calc(var(--pad) * .46);
+    color: #5A5470;
+    font-weight: 900;
+    transition: transform .1s, box-shadow .1s, background .1s;
+  }
+  .pad-btn:active, .pad-btn.press {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #DCCDAF;
+    background: #F3FBFF;
+  }
+  .pad-btn.pulse { animation: padPulse 1s ease-in-out infinite; background: #FFF6D8; color: #B78500; }
+  .pad-btn[data-dir="U"] { grid-area: up; }
+  .pad-btn[data-dir="L"] { grid-area: left; }
+  .pad-btn[data-dir="R"] { grid-area: right; }
+  .pad-btn[data-dir="D"] { grid-area: down; }
+  .pad-mid {
+    grid-area: mid;
+    display: grid; place-items: center;
+    color: #DDD2BC;
+    font-size: calc(var(--pad) * .34);
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+
+  .actions { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .btn-run {
+    width: clamp(86px, 12dvh, 108px);
+    height: clamp(86px, 12dvh, 108px);
+    border-radius: 50%;
+    background: linear-gradient(180deg, #82E4A6, #38B96C);
+    color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    box-shadow: 0 8px 0 #279655, 0 14px 26px rgba(56,185,108,.34);
+    transition: transform .12s, box-shadow .12s, filter .2s;
+  }
+  .btn-run .play { font-size: clamp(26px, 3.6dvh, 33px); line-height: 1; margin-left: 4px; }
+  .btn-run em { font-style: normal; font-weight: 900; font-size: clamp(14px, 1.9dvh, 17px); letter-spacing: 2px; margin-top: 2px; }
+  .btn-run:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 3px 0 #279655; }
+  .btn-run:disabled { filter: grayscale(.6); opacity: .5; box-shadow: 0 6px 0 #A9A294; cursor: default; }
+  .btn-run.ready { animation: readyPulse 2.4s ease-in-out infinite; }
+
+  .btn-clear {
+    font-weight: 800;
+    font-size: clamp(13px, 1.8dvh, 15px);
+    color: #9A7B54;
+    background: #fff;
+    padding: 9px 18px;
+    border-radius: 999px;
+    box-shadow: 0 4px 0 #E3D3B6;
+    transition: transform .1s, box-shadow .1s;
+    white-space: nowrap;
+  }
+  .btn-clear:active { transform: translateY(3px); box-shadow: 0 1px 0 #E3D3B6; }
+  .btn-clear:disabled { opacity: .4; cursor: default; }
+  .btn-clear.pulse { animation: padPulse 1s ease-in-out infinite; background: #FFF6D8; }
+
+  /* ---------------- 遮罩 / 弹窗 ---------------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(255,247,229,.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .25s, visibility .25s;
+  }
+  .overlay.show { opacity: 1; visibility: visible; }
+
+  .win-card {
+    width: min(90vw, 400px);
+    background: #fff;
+    border-radius: 32px;
+    padding: 30px 26px 26px;
+    text-align: center;
+    box-shadow: 0 12px 0 rgba(226,209,180,.9), 0 30px 60px rgba(150,120,80,.25);
+    transform: translateY(14px) scale(.94);
+    transition: transform .35s cubic-bezier(.34,1.4,.64,1);
+  }
+  .overlay.show .win-card { transform: translateY(0) scale(1); }
+
+  .win-star {
+    width: 92px; height: 92px;
+    margin: 0 auto 6px;
+    display: grid; place-items: center;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--yellow);
+    filter: drop-shadow(0 6px 0 #EFAE00);
+    animation: cheer 1.4s ease-in-out infinite;
+  }
+  .win-card h2 {
+    margin: 6px 0 6px;
+    font-size: clamp(25px, 6vw, 31px);
+    letter-spacing: 1px;
+    color: #3D3A4E;
+  }
+  .win-card p {
+    margin: 0 0 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #8B7F6B;
+    font-weight: 600;
+  }
+  .win-actions { display: flex; flex-direction: column; gap: 10px; }
+
+  .btn {
+    border-radius: 18px;
+    padding: 15px 18px;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 1px;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, #FFD25E, #FFB300);
+    color: #6B4A00;
+    box-shadow: 0 5px 0 #D89300;
+  }
+  .btn.primary:active { transform: translateY(4px); box-shadow: 0 1px 0 #D89300; }
+  .btn.ghost {
+    background: #F6F1E6;
+    color: #8C7B5E;
+    box-shadow: 0 4px 0 #E2D5BC;
+    font-size: 15px;
+    padding: 12px 18px;
+  }
+  .btn.ghost:active { transform: translateY(3px); box-shadow: 0 1px 0 #E2D5BC; }
+
+  /* 帮助 */
+  .help-card {
+    width: min(92vw, 460px);
+    max-height: 86dvh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 28px;
+    padding: 24px 22px;
+    box-shadow: 0 12px 0 rgba(226,209,180,.9), 0 30px 60px rgba(150,120,80,.25);
+    transform: translateY(14px) scale(.96);
+    transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+  }
+  .overlay.show .help-card { transform: translateY(0) scale(1); }
+  .help-card h3 { margin: 0 0 4px; font-size: 21px; }
+  .help-card h4 { margin: 18px 0 8px; font-size: 15px; color: #38A9D8; }
+  .help-card p, .help-card li { font-size: 14.5px; line-height: 1.65; color: #6F6A5C; }
+  .help-card ol { margin: 0; padding-left: 22px; }
+  .help-card li { margin-bottom: 4px; }
+  .help-card .tip { background: #FFF6E0; border-radius: 14px; padding: 10px 14px; margin: 12px 0 0; font-size: 13.5px; color: #8B7444; }
+
+  .pick-summary { margin: 0 0 10px; font-size: 13px; color: #8B7F6B; font-weight: 700; }
+  .chapter-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .chapter-tab {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    padding: 7px 2px;
+    border-radius: 11px;
+    background: #F7F2E7;
+    font-size: 12px;
+    font-weight: 800;
+    color: #8C7B5E;
+    box-shadow: 0 2px 0 #E3D6BE;
+  }
+  .chapter-tab .cnum {
+    font-size: 11px; font-weight: 900; color: #B3A488;
+    background: #fff; border-radius: 6px; padding: 0 4px;
+  }
+  .chapter-tab.active { background: #E6F6FF; color: #2E9BC4; box-shadow: 0 2px 0 #B9DDEE; }
+  .chapter-tab.active .cnum { color: #2E9BC4; }
+
+  .level-pick {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .level-pick button {
+    aspect-ratio: 2.1 / 1;
+    border-radius: 13px;
+    background: #F7F2E7;
+    font-weight: 900;
+    color: #8C7B5E;
+    font-size: 16px;
+    box-shadow: 0 3px 0 #E2D5BC;
+    position: relative;
+  }
+  .level-pick button.done { background: #FFF3C9; color: #9A7317; box-shadow: 0 3px 0 #EDD189; }
+  .level-pick button.done::after {
+    content: "★";
+    position: absolute; top: 2px; right: 6px;
+    font-size: 12px; color: var(--yellow);
+  }
+  .level-pick button.current { outline: 3px solid #7CC7EA; outline-offset: -1px; }
+  .level-pick button:active { transform: translateY(2px); box-shadow: 0 1px 0 #E2D5BC; }
+
+  .close-row { display: flex; justify-content: center; margin-top: 18px; }
+
+  .confetti {
+    position: fixed;
+    top: -8vh;
+    z-index: 90;
+    border-radius: 3px;
+    pointer-events: none;
+    animation: fall var(--dur) linear var(--delay) forwards;
+  }
+
+  /* ---------------- 动画 ---------------- */
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-4%) rotate(1.5deg); }
+  }
+  @keyframes fruitFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-4%) scale(1.04); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-9%) rotate(-6deg); }
+    40% { transform: translateX(9%) rotate(6deg); }
+    60% { transform: translateX(-6%) rotate(-4deg); }
+    80% { transform: translateX(5%) rotate(3deg); }
+  }
+  @keyframes boardShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  @keyframes cheer {
+    0%, 100% { transform: translateY(0) scale(1); }
+    35% { transform: translateY(-10%) scale(1.08) rotate(-3deg); }
+    70% { transform: translateY(0) scale(1) rotate(3deg); }
+  }
+  @keyframes starPop {
+    0% { transform: scale(.4) rotate(-40deg); }
+    60% { transform: scale(1.5) rotate(10deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  @keyframes slotPulse {
+    0%, 100% { box-shadow: inset 0 0 0 2px #EADDC4; }
+    50% { box-shadow: inset 0 0 0 3px #FFD166; }
+  }
+  @keyframes padPulse {
+    0%, 100% { box-shadow: 0 5px 0 #DCCDAF, 0 0 0 0 rgba(255,193,7,.5); }
+    50% { box-shadow: 0 5px 0 #DCCDAF, 0 0 0 12px rgba(255,193,7,0); }
+  }
+  @keyframes readyPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+  }
+  @keyframes fall {
+    0% { transform: translate3d(0,0,0) rotate(0deg); opacity: 1; }
+    100% { transform: translate3d(var(--dx), 118vh, 0) rotate(var(--rot)); opacity: .9; }
+  }
+
+  /* 横屏 / 桌面：棋盘在左，操作区在右，利用宽屏空间 */
+  @media (min-width: 820px) and (min-height: 560px) and (min-aspect-ratio: 1/1) {
+    :root { --board: min(50vw, 62dvh, 520px); --pad: clamp(58px, 8.2dvh, 76px); }
+
+    #app {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
+      grid-template-rows: auto minmax(0, 1fr);
+      column-gap: clamp(18px, 3vw, 48px);
+      align-items: center;
+    }
+    .hud { grid-column: 1 / -1; grid-row: 1; align-self: start; }
+    .stage { grid-column: 1; grid-row: 2; width: 100%; }
+    .controls { grid-column: 2; grid-row: 2; width: 100%; justify-content: center; }
+    .control-main { gap: clamp(14px, 2.4vw, 36px); }
+    .actions { gap: 14px; }
+    .program { width: max-content; max-width: 100%; justify-content: flex-start; }
+    .hint { font-size: clamp(14px, 1.4vw, 18px); }
+  }
+
+  /* 手机横屏 / 矮屏幕：也切成左右两栏，保证一屏能看全 */
+  @media (max-height: 560px) and (min-width: 640px) and (orientation: landscape) {
+    :root { --board: min(56vw, 64dvh, 330px); --pad: clamp(42px, 12.5dvh, 54px); }
+
+    #app {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-rows: auto minmax(0, 1fr);
+      column-gap: 14px;
+      padding: 6px 14px;
+    }
+    .hud { grid-column: 1 / -1; grid-row: 1; align-self: start; }
+    .brand { display: none; }
+    .stage { grid-column: 1; grid-row: 2; width: 100%; gap: 4px; }
+    .controls { grid-column: 2; grid-row: 2; width: 100%; justify-content: center; gap: 6px; }
+    .control-main { gap: 12px; }
+    .program { width: 100%; justify-content: flex-start; min-height: 46px; padding: 6px 8px; }
+    .hint { font-size: 12px; min-height: 22px; }
+    .btn-run { width: 72px; height: 72px; }
+    .btn-run em { font-size: 12px; }
+    .btn-clear { padding: 7px 14px; font-size: 12px; }
+  }
+
+  @media (max-height: 700px) and (max-aspect-ratio: 1/1) {
+    :root { --pad: clamp(46px, 6.6dvh, 58px); --board: min(88vw, 40dvh, 380px); }
+    .brand { display: none; }
+    .hint { min-height: 26px; }
+  }
+  @media (max-width: 400px) {
+    .brand { display: none; }
+    .control-main { gap: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="hud">
+    <div class="brand"><span class="dot"></span><span>小机器人吃果子</span></div>
+    <button class="star-pill" id="stars" aria-label="已获得的星星，点开选关">
+      <span class="star-ico">★</span><span id="starCount">0</span>
+    </button>
+    <button class="top-btn" id="sound" aria-label="声音开关" title="声音开关">🔊</button>
+    <button class="top-btn" id="help" aria-label="玩法说明" title="玩法说明">?</button>
+  </header>
+
+  <main class="stage">
+    <div class="level-row">
+      <span class="level-tag" id="levelTag">第 <b>1</b> 关</span>
+      <button class="hint-btn" id="hintBtn">💡 提示</button>
+    </div>
+
+    <div class="board-shell">
+      <div class="board" id="board">
+        <div class="robot" id="robot"><div class="robot-inner" id="robotInner"></div></div>
+      </div>
+    </div>
+
+    <p class="hint" id="hint" aria-live="polite"></p>
+  </main>
+
+  <footer class="controls">
+    <div class="program" id="program" aria-label="程序区"></div>
+
+    <div class="control-main">
+      <div class="dpad" role="group" aria-label="方向按钮">
+        <button class="pad-btn" data-dir="U" aria-label="向上">↑</button>
+        <button class="pad-btn" data-dir="L" aria-label="向左">←</button>
+        <div class="pad-mid">✦</div>
+        <button class="pad-btn" data-dir="R" aria-label="向右">→</button>
+        <button class="pad-btn" data-dir="D" aria-label="向下">↓</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn-run" id="run" aria-label="开始行走">
+          <span class="play">▶</span><em>出发</em>
+        </button>
+        <button class="btn-clear" id="clear">↺ 重来</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- 通关 -->
+<div class="overlay" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle" aria-hidden="true">
+  <div class="win-card">
+    <div class="win-star" id="winStar">★</div>
+    <h2 id="winTitle">太棒啦！</h2>
+    <p id="winSub">小机器人吃到果子啦</p>
+    <div class="win-actions">
+      <button class="btn primary" id="nextBtn">下一关 ▶</button>
+      <button class="btn ghost" id="againBtn">再玩一次</button>
+    </div>
+  </div>
+</div>
+
+<!-- 帮助 -->
+<div class="overlay" id="helpPanel" role="dialog" aria-modal="true" aria-labelledby="helpTitle" aria-hidden="true">
+  <div class="help-card">
+    <h3 id="helpTitle">怎么玩？</h3>
+    <p>帮小机器人排好路线，把果子全部吃掉！</p>
+    <ol>
+      <li>点下面的 <b>↑ ↓ ← →</b>，把想走的步子排进上面的方格里。</li>
+      <li>点绿色的 <b>出发</b>，小机器人就会一步一步照你说的走。</li>
+      <li>走错了？点一下方格里的箭头，就能把它删掉，再试一次。</li>
+    </ol>
+    <div class="tip">给家长：这一关关练的是「顺序」「方向」「试错与调试」。没有计时、没有分数、也没有失败惩罚，孩子可以放心地反复试。</div>
+
+    <h4>选一关</h4>
+    <p class="pick-summary" id="pickSummary"></p>
+    <div class="chapter-tabs" id="chapterTabs"></div>
+    <div class="level-pick" id="levelPick"></div>
+
+    <div class="close-row">
+      <button class="btn ghost" id="helpClose">知道啦</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= 数据 ================= */
+
+  const N = 5;
+  const MAX_PROGRAM = 24;
+
+  const DIR = { U: [-1, 0], D: [1, 0], L: [0, -1], R: [0, 1] };
+  const ARROW = { U: '↑', D: '↓', L: '←', R: '→' };
+  const WORD = { U: '向上', D: '向下', L: '向左', R: '向右' };
+
+  const LEVELS = [
+    { start: [4, 3], fruits: [[2, 3]], walls: [], solution: ['U', 'U'], tip: '向上 2 步，果子就在那里，出发吧！' },
+    { start: [2, 0], fruits: [[0, 0]], walls: [], solution: ['U', 'U'], tip: '向上 2 步，果子就在那里，出发吧！' },
+    { start: [4, 1], fruits: [[2, 0]], walls: [], solution: ['L', 'U', 'U'], tip: '向左 1 步，再向上 2 步，果子就在那里，出发吧！' },
+    { start: [2, 0], fruits: [[0, 1]], walls: [], solution: ['U', 'U', 'R'], tip: '向上 2 步，再向右 1 步，果子就在那里，出发吧！' },
+    { start: [2, 4], fruits: [[0, 3]], walls: [], solution: ['L', 'U', 'U'], tip: '向左 1 步，再向上 2 步，果子就在那里，出发吧！' },
+    { start: [4, 4], fruits: [[2, 4]], walls: [], solution: ['U', 'U'], tip: '向上 2 步，果子就在那里，出发吧！' },
+    { start: [2, 0], fruits: [[2, 3]], walls: [], solution: ['R', 'R', 'R'], tip: '向右 3 步，果子就在那里，出发吧！' },
+    { start: [4, 3], fruits: [[2, 4]], walls: [], solution: ['R', 'U', 'U'], tip: '向右 1 步，再向上 2 步，果子就在那里，出发吧！' },
+    { start: [4, 3], fruits: [[3, 0]], walls: [], solution: ['L', 'L', 'L', 'U'], tip: '向左 3 步，再向上 1 步，果子就在那里，出发吧！' },
+    { start: [4, 2], fruits: [[1, 3]], walls: [], solution: ['U', 'U', 'U', 'R'], tip: '向上 3 步，再向右 1 步，果子就在那里，出发吧！' },
+    { start: [0, 1], fruits: [[1, 4]], walls: [], solution: ['R', 'R', 'R', 'D'], tip: '向右 3 步，再向下 1 步，果子就在那里，出发吧！' },
+    { start: [0, 1], fruits: [[2, 0]], walls: [], solution: ['L', 'D', 'D'], tip: '向左 1 步，再向下 2 步，果子就在那里，出发吧！' },
+    { start: [0, 2], fruits: [[4, 3]], walls: [], solution: ['R', 'D', 'D', 'D', 'D'], tip: '这一关要走 5 步：先向右 1 步，再向下 4 步。' },
+    { start: [2, 4], fruits: [[0, 1]], walls: [], solution: ['U', 'U', 'L', 'L', 'L'], tip: '这一关要走 5 步：先向上 2 步，再向左 3 步。' },
+    { start: [4, 4], fruits: [[0, 3]], walls: [], solution: ['U', 'U', 'U', 'U', 'L'], tip: '这一关要走 5 步：先向上 4 步，再向左 1 步。' },
+    { start: [4, 0], fruits: [[3, 4]], walls: [], solution: ['R', 'R', 'R', 'R', 'U'], tip: '这一关要走 5 步：先向右 4 步，再向上 1 步。' },
+    { start: [2, 4], fruits: [[3, 1]], walls: [[1, 2]], solution: ['L', 'L', 'L', 'D'], tip: '向左 3 步，再向下 1 步，果子就在那里，出发吧！' },
+    { start: [4, 3], fruits: [[3, 0]], walls: [[4, 4]], solution: ['L', 'L', 'L', 'U'], tip: '向左 3 步，再向上 1 步，果子就在那里，出发吧！' },
+    { start: [2, 4], fruits: [[3, 1]], walls: [[2, 2]], solution: ['D', 'L', 'L', 'L'], tip: '向下 1 步，再向左 3 步，果子就在那里，出发吧！' },
+    { start: [4, 3], fruits: [[0, 4]], walls: [[2, 3]], solution: ['R', 'U', 'U', 'U', 'U'], tip: '这一关要走 5 步：先向右 1 步，再向上 4 步。' },
+    { start: [4, 4], fruits: [[1, 3]], walls: [[1, 2]], solution: ['L', 'U', 'U', 'U'], tip: '向左 1 步，再向上 3 步，果子就在那里，出发吧！' },
+    { start: [3, 0], fruits: [[3, 4]], walls: [[4, 4]], solution: ['D', 'R', 'R', 'U', 'R', 'R'], tip: '这一关要走 6 步：先向下 1 步，再向右 2 步。' },
+    { start: [4, 0], fruits: [[2, 3]], walls: [[2, 2]], solution: ['R', 'R', 'R', 'U', 'U'], tip: '这一关要走 5 步：先向右 3 步，再向上 2 步。' },
+    { start: [4, 3], fruits: [[1, 1]], walls: [[0, 4]], solution: ['L', 'L', 'U', 'U', 'U'], tip: '这一关要走 5 步：先向左 2 步，再向上 3 步。' },
+    { start: [4, 4], fruits: [[2, 1]], walls: [[3, 2]], solution: ['L', 'L', 'L', 'L', 'U', 'U', 'R'], tip: '这一关要走 7 步：先向左 4 步，再向上 2 步。' },
+    { start: [1, 4], fruits: [[2, 2]], walls: [[2, 1]], solution: ['U', 'L', 'L', 'D', 'D'], tip: '这一关要走 5 步：先向上 1 步，再向左 2 步。' },
+    { start: [4, 3], fruits: [[0, 2]], walls: [[2, 2]], solution: ['R', 'U', 'U', 'U', 'U', 'L', 'L'], tip: '这一关要走 7 步：先向右 1 步，再向上 4 步。' },
+    { start: [4, 0], fruits: [[1, 3]], walls: [[4, 1], [1, 4]], solution: ['U', 'U', 'R', 'R', 'R', 'U'], tip: '这一关要走 6 步：先向上 2 步，再向右 3 步。' },
+    { start: [4, 1], fruits: [[0, 1]], walls: [[3, 1], [0, 2]], solution: ['L', 'U', 'U', 'U', 'U', 'R'], tip: '这一关要走 6 步：先向左 1 步，再向上 4 步。' },
+    { start: [3, 0], fruits: [[2, 4]], walls: [[2, 0], [4, 3]], solution: ['D', 'R', 'U', 'R', 'R', 'R', 'U'], tip: '这一关要走 7 步：先向下 1 步，再向右 1 步。' },
+    { start: [0, 2], fruits: [[3, 0]], walls: [[2, 0], [1, 1]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'U'], tip: '这一关要走 7 步：先向下 4 步，再向左 2 步。' },
+    { start: [0, 3], fruits: [[2, 4]], walls: [[3, 1], [3, 2]], solution: ['D', 'D', 'D', 'D', 'R', 'U', 'U'], tip: '这一关要走 7 步：先向下 4 步，再向右 1 步。' },
+    { start: [0, 3], fruits: [[2, 1]], walls: [[3, 4], [3, 3], [0, 2], [3, 2]], solution: ['R', 'D', 'D', 'L', 'L', 'L'], tip: '这一关要走 6 步：先向右 1 步，再向下 2 步。' },
+    { start: [2, 4], fruits: [[4, 1]], walls: [[1, 4], [0, 3], [2, 3], [3, 2]], solution: ['D', 'D', 'L', 'L', 'L'], tip: '这一关要走 5 步：先向下 2 步，再向左 3 步。' },
+    { start: [0, 2], fruits: [[4, 4]], walls: [[0, 1], [2, 3], [3, 0], [1, 1]], solution: ['R', 'R', 'D', 'D', 'D', 'D'], tip: '这一关要走 6 步：先向右 2 步，再向下 4 步。' },
+    { start: [1, 4], fruits: [[3, 0]], walls: [[4, 3], [2, 3], [2, 4], [0, 3]], solution: ['L', 'L', 'L', 'L', 'D', 'D'], tip: '这一关要走 6 步：先向左 4 步，再向下 2 步。' },
+    { start: [1, 4], fruits: [[4, 1]], walls: [[2, 0], [4, 2], [3, 2], [1, 0]], solution: ['L', 'L', 'L', 'D', 'D', 'D'], tip: '这一关要走 6 步：先向左 3 步，再向下 3 步。' },
+    { start: [1, 0], fruits: [[2, 0]], walls: [[0, 1], [0, 2], [0, 0], [3, 4]], solution: ['R', 'R', 'R', 'D', 'L', 'L', 'L'], tip: '这一关要走 7 步：先向右 3 步，再向下 1 步。' },
+    { start: [3, 0], fruits: [[1, 3]], walls: [[1, 2], [0, 1], [4, 0], [4, 4]], solution: ['R', 'R', 'R', 'R', 'U', 'U', 'L'], tip: '这一关要走 7 步：先向右 4 步，再向上 2 步。' },
+    { start: [4, 2], fruits: [[0, 1]], walls: [[3, 1], [1, 3], [1, 1], [4, 3]], solution: ['L', 'L', 'U', 'U', 'U', 'U', 'R'], tip: '这一关要走 7 步：先向左 2 步，再向上 4 步。' },
+    { start: [1, 0], fruits: [[3, 1]], walls: [[4, 3], [1, 1], [0, 0], [2, 2]], solution: ['D', 'D', 'D', 'R', 'R', 'U', 'L'], tip: '这一关要走 7 步：先向下 3 步，再向右 2 步。' },
+    { start: [0, 3], fruits: [[2, 4]], walls: [[1, 2], [2, 2], [2, 0], [3, 2]], solution: ['D', 'D', 'D', 'D', 'R', 'U', 'U'], tip: '这一关要走 7 步：先向下 4 步，再向右 1 步。' },
+    { start: [0, 4], fruits: [[2, 1]], walls: [[2, 3], [0, 3], [3, 3], [1, 3]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'U', 'U'], tip: '这一关要走 9 步：先向下 4 步，再向左 3 步。' },
+    { start: [1, 0], fruits: [[4, 4]], walls: [[2, 3], [2, 4], [2, 2], [4, 1], [4, 3]], solution: ['D', 'D', 'R', 'R', 'R', 'R', 'D'], tip: '这一关要走 7 步：先向下 2 步，再向右 4 步。' },
+    { start: [0, 3], fruits: [[4, 0]], walls: [[1, 3], [2, 2], [4, 1], [4, 2], [2, 0]], solution: ['R', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'D'], tip: '这一关要走 9 步：先向右 1 步，再向下 3 步。' },
+    { start: [0, 2], fruits: [[3, 4]], walls: [[2, 2], [4, 0], [2, 0], [2, 3], [2, 4]], solution: ['L', 'D', 'D', 'D', 'R', 'R', 'R'], tip: '这一关要走 7 步：先向左 1 步，再向下 3 步。' },
+    { start: [0, 4], fruits: [[2, 2]], walls: [[3, 1], [2, 3], [4, 1], [4, 0], [2, 1]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'U', 'U'], tip: '这一关要走 8 步：先向下 4 步，再向左 2 步。' },
+    { start: [0, 2], fruits: [[2, 0]], walls: [[4, 2], [3, 2], [3, 1], [3, 3], [1, 0]], solution: ['R', 'R', 'D', 'D', 'L', 'L', 'L', 'L'], tip: '这一关要走 8 步：先向右 2 步，再向下 2 步。' },
+    { start: [1, 4], fruits: [[0, 2], [3, 2]], walls: [[3, 1]], solution: ['U', 'L', 'L', 'D', 'D', 'D'], tip: '这一关要走 6 步：先向上 1 步，再向左 2 步。' },
+    { start: [2, 0], fruits: [[1, 2], [0, 0]], walls: [[0, 3]], solution: ['R', 'R', 'U', 'U', 'L', 'L'], tip: '这一关要走 6 步：先向右 2 步，再向上 2 步。' },
+    { start: [4, 1], fruits: [[2, 0], [1, 2]], walls: [[2, 2]], solution: ['L', 'U', 'U', 'U', 'R', 'R'], tip: '这一关要走 6 步：先向左 1 步，再向上 3 步。' },
+    { start: [4, 3], fruits: [[1, 4], [1, 2]], walls: [[0, 1]], solution: ['R', 'U', 'U', 'U', 'U', 'L', 'L', 'D'], tip: '这一关要走 8 步：先向右 1 步，再向上 4 步。' },
+    { start: [4, 2], fruits: [[2, 4], [0, 3]], walls: [[4, 4]], solution: ['R', 'U', 'U', 'R', 'U', 'U', 'L'], tip: '这一关要走 7 步：先向右 1 步，再向上 2 步。' },
+    { start: [1, 0], fruits: [[2, 1], [0, 3]], walls: [[4, 1]], solution: ['D', 'D', 'R', 'U', 'U', 'U', 'R', 'R'], tip: '这一关要走 8 步：先向下 2 步，再向右 1 步。' },
+    { start: [0, 4], fruits: [[2, 2], [3, 4]], walls: [[4, 2]], solution: ['D', 'L', 'L', 'D', 'L', 'D', 'R', 'R', 'R'], tip: '这一关要走 9 步：先向下 1 步，再向左 2 步。' },
+    { start: [4, 0], fruits: [[2, 2], [0, 3]], walls: [[3, 1]], solution: ['R', 'R', 'U', 'U', 'R', 'R', 'U', 'U', 'L'], tip: '这一关要走 9 步：先向右 2 步，再向上 2 步。' },
+    { start: [0, 3], fruits: [[1, 2], [0, 0]], walls: [[0, 2]], solution: ['R', 'D', 'L', 'L', 'L', 'L', 'U'], tip: '这一关要走 7 步：先向右 1 步，再向下 1 步。' },
+    { start: [4, 4], fruits: [[3, 3], [2, 2]], walls: [[1, 3]], solution: ['U', 'U', 'L', 'D', 'D', 'L', 'U', 'U'], tip: '这一关要走 8 步：先向上 2 步，再向左 1 步。' },
+    { start: [4, 1], fruits: [[0, 0], [1, 4]], walls: [[4, 3]], solution: ['U', 'U', 'L', 'U', 'U', 'R', 'R', 'R', 'R', 'D'], tip: '这一关要走 10 步：先向上 2 步，再向左 1 步。' },
+    { start: [0, 3], fruits: [[3, 2], [3, 4]], walls: [[0, 1], [2, 1]], solution: ['L', 'D', 'D', 'D', 'D', 'R', 'R', 'U'], tip: '这一关要走 8 步：先向左 1 步，再向下 4 步。' },
+    { start: [3, 4], fruits: [[3, 2], [0, 3]], walls: [[2, 0], [2, 4]], solution: ['D', 'L', 'L', 'U', 'U', 'U', 'U', 'R'], tip: '这一关要走 8 步：先向下 1 步，再向左 2 步。' },
+    { start: [0, 2], fruits: [[3, 3], [1, 0]], walls: [[4, 4], [4, 3]], solution: ['R', 'D', 'D', 'D', 'L', 'L', 'L', 'U', 'U'], tip: '这一关要走 9 步：先向右 1 步，再向下 3 步。' },
+    { start: [0, 0], fruits: [[4, 1], [2, 4]], walls: [[0, 1], [4, 3]], solution: ['D', 'D', 'D', 'D', 'R', 'U', 'R', 'R', 'R', 'U'], tip: '这一关要走 10 步：先向下 4 步，再向右 1 步。' },
+    { start: [4, 2], fruits: [[2, 3], [0, 0]], walls: [[1, 1], [1, 4]], solution: ['R', 'R', 'U', 'L', 'U', 'U', 'U', 'L', 'L', 'L'], tip: '这一关要走 10 步：先向右 2 步，再向上 1 步。' },
+    { start: [0, 4], fruits: [[4, 4], [3, 2]], walls: [[0, 3], [4, 1], [1, 3], [2, 3], [3, 1]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'U'], tip: '这一关要走 7 步：先向下 4 步，再向左 2 步。' },
+    { start: [0, 2], fruits: [[1, 1], [1, 4]], walls: [[4, 0], [2, 2], [2, 4], [2, 1], [0, 3]], solution: ['L', 'L', 'D', 'R', 'R', 'R', 'R'], tip: '这一关要走 7 步：先向左 2 步，再向下 1 步。' },
+    { start: [4, 2], fruits: [[1, 3], [0, 0]], walls: [[1, 0], [1, 1], [3, 2], [2, 4], [1, 2]], solution: ['R', 'U', 'U', 'U', 'U', 'L', 'L', 'L'], tip: '这一关要走 8 步：先向右 1 步，再向上 4 步。' },
+    { start: [3, 0], fruits: [[2, 3], [2, 0]], walls: [[0, 4], [1, 1], [3, 4], [1, 3], [4, 0]], solution: ['R', 'R', 'R', 'U', 'L', 'L', 'L'], tip: '这一关要走 7 步：先向右 3 步，再向上 1 步。' },
+    { start: [0, 2], fruits: [[3, 3], [3, 0]], walls: [[0, 4], [1, 0], [3, 2], [1, 4], [4, 4]], solution: ['R', 'D', 'D', 'D', 'D', 'L', 'L', 'L', 'U'], tip: '这一关要走 9 步：先向右 1 步，再向下 4 步。' },
+    { start: [2, 4], fruits: [[3, 2], [3, 3]], walls: [[2, 0], [1, 2], [1, 0], [3, 0], [1, 1]], solution: ['L', 'L', 'L', 'D', 'R', 'D', 'R', 'R', 'U', 'L'], tip: '这一关要走 10 步：先向左 3 步，再向下 1 步。' },
+    { start: [4, 2], fruits: [[3, 1], [1, 0]], walls: [[4, 3], [2, 2], [2, 0], [0, 2], [1, 2]], solution: ['L', 'L', 'U', 'R', 'U', 'U', 'U', 'L', 'D'], tip: '这一关要走 9 步：先向左 2 步，再向上 1 步。' },
+    { start: [0, 4], fruits: [[0, 0], [3, 1]], walls: [[4, 1], [3, 2], [2, 0], [1, 2], [1, 3]], solution: ['L', 'L', 'L', 'L', 'D', 'R', 'D', 'D'], tip: '这一关要走 8 步：先向左 4 步，再向下 1 步。' },
+    { start: [4, 1], fruits: [[3, 2], [0, 0]], walls: [[3, 0], [2, 2], [0, 1], [1, 2], [2, 3]], solution: ['R', 'R', 'R', 'U', 'L', 'L', 'L', 'U', 'U', 'L', 'U'], tip: '这一关要走 11 步：先向右 3 步，再向上 1 步。' },
+    { start: [4, 0], fruits: [[3, 4], [1, 3]], walls: [[3, 1], [2, 0], [1, 2], [1, 1], [3, 3]], solution: ['R', 'R', 'R', 'R', 'U', 'U', 'U', 'U', 'L', 'D'], tip: '这一关要走 10 步：先向右 4 步，再向上 4 步。' },
+    { start: [0, 3], fruits: [[1, 0], [2, 4]], walls: [[4, 2], [0, 4], [3, 1], [2, 0], [2, 3]], solution: ['L', 'L', 'L', 'D', 'R', 'R', 'R', 'R', 'D'], tip: '这一关要走 9 步：先向左 3 步，再向下 1 步。' },
+    { start: [1, 4], fruits: [[1, 0], [3, 1]], walls: [[1, 1], [4, 2], [3, 2], [2, 4], [2, 1], [1, 3]], solution: ['U', 'L', 'L', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'U'], tip: '这一关要走 11 步：先向上 1 步，再向左 4 步。' },
+    { start: [0, 3], fruits: [[4, 4], [2, 3]], walls: [[2, 2], [1, 3], [4, 1], [0, 2], [3, 1], [0, 0]], solution: ['R', 'D', 'D', 'D', 'D', 'L', 'L', 'U', 'R', 'U'], tip: '这一关要走 10 步：先向右 1 步，再向下 4 步。' },
+    { start: [4, 4], fruits: [[0, 2], [4, 2]], walls: [[4, 1], [1, 1], [2, 1], [3, 2], [1, 3], [0, 1]], solution: ['U', 'U', 'U', 'U', 'L', 'L', 'D', 'D', 'R', 'D', 'D', 'L'], tip: '这一关要走 12 步：先向上 4 步，再向左 2 步。' },
+    { start: [2, 0], fruits: [[0, 4], [4, 3]], walls: [[2, 1], [3, 3], [1, 2], [3, 0], [1, 1], [1, 3]], solution: ['U', 'U', 'R', 'R', 'R', 'R', 'D', 'D', 'D', 'D', 'L'], tip: '这一关要走 11 步：先向上 2 步，再向右 4 步。' },
+    { start: [0, 2], fruits: [[4, 0], [2, 3]], walls: [[1, 1], [1, 3], [4, 2], [4, 4], [0, 1], [1, 4]], solution: ['D', 'D', 'L', 'L', 'D', 'D', 'R', 'U', 'R', 'R', 'U'], tip: '这一关要走 11 步：先向下 2 步，再向左 2 步。' },
+    { start: [0, 3], fruits: [[2, 4], [4, 4], [4, 1]], walls: [[3, 2], [4, 0], [1, 3]], solution: ['R', 'D', 'D', 'D', 'D', 'L', 'L', 'L'], tip: '这一关要走 8 步：先向右 1 步，再向下 4 步。', fruit: 'star' },
+    { start: [2, 4], fruits: [[2, 1], [0, 0], [1, 2]], walls: [[3, 2], [3, 3], [3, 1]], solution: ['L', 'L', 'L', 'L', 'U', 'U', 'R', 'R', 'D'], tip: '这一关要走 9 步：先向左 4 步，再向上 2 步。', fruit: 'star' },
+    { start: [4, 4], fruits: [[1, 4], [1, 2], [4, 2]], walls: [[0, 4], [3, 3], [0, 3]], solution: ['U', 'U', 'U', 'L', 'L', 'D', 'D', 'D'], tip: '这一关要走 8 步：先向上 3 步，再向左 2 步。', fruit: 'star' },
+    { start: [4, 2], fruits: [[3, 0], [0, 0], [0, 3]], walls: [[3, 1], [3, 2], [2, 1]], solution: ['L', 'L', 'U', 'U', 'U', 'U', 'R', 'R', 'R'], tip: '这一关要走 9 步：先向左 2 步，再向上 4 步。', fruit: 'star' },
+    { start: [1, 4], fruits: [[1, 1], [4, 0], [4, 3]], walls: [[0, 1], [2, 2], [0, 4]], solution: ['L', 'L', 'L', 'L', 'D', 'D', 'D', 'R', 'R', 'R'], tip: '这一关要走 10 步：先向左 4 步，再向下 3 步。', fruit: 'star' },
+    { start: [2, 4], fruits: [[1, 2], [0, 1], [0, 4]], walls: [[4, 2], [4, 3], [2, 1]], solution: ['U', 'L', 'L', 'L', 'L', 'U', 'R', 'R', 'R', 'R'], tip: '这一关要走 10 步：先向上 1 步，再向左 4 步。', fruit: 'star' },
+    { start: [4, 4], fruits: [[4, 1], [2, 0], [0, 1]], walls: [[2, 1], [0, 2], [3, 2]], solution: ['L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R'], tip: '这一关要走 9 步：先向左 4 步，再向上 4 步。', fruit: 'star' },
+    { start: [3, 0], fruits: [[1, 1], [0, 4], [3, 4]], walls: [[1, 0], [4, 1], [4, 3]], solution: ['R', 'U', 'U', 'U', 'R', 'R', 'R', 'D', 'D', 'D'], tip: '这一关要走 10 步：先向右 1 步，再向上 3 步。', fruit: 'star' },
+    { start: [3, 4], fruits: [[4, 1], [1, 0], [0, 3]], walls: [[3, 3], [1, 3], [1, 1]], solution: ['D', 'L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R', 'R', 'R'], tip: '这一关要走 12 步：先向下 1 步，再向左 4 步。', fruit: 'star' },
+    { start: [1, 0], fruits: [[0, 3], [2, 4], [3, 1]], walls: [[2, 1], [1, 2], [4, 2]], solution: ['U', 'R', 'R', 'R', 'R', 'D', 'D', 'D', 'L', 'L', 'L'], tip: '这一关要走 11 步：先向上 1 步，再向右 4 步。', fruit: 'star' },
+    { start: [4, 3], fruits: [[1, 4], [1, 3], [2, 0]], walls: [[0, 2], [2, 3], [4, 0]], solution: ['R', 'U', 'U', 'U', 'U', 'L', 'D', 'L', 'L', 'L', 'D'], tip: '这一关要走 11 步：先向右 1 步，再向上 4 步。', fruit: 'star' },
+    { start: [3, 4], fruits: [[4, 1], [1, 0], [2, 1]], walls: [[3, 2], [3, 1], [2, 4], [2, 2]], solution: ['D', 'L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R', 'D', 'D'], tip: '这一关要走 12 步：先向下 1 步，再向左 4 步。', fruit: 'star' },
+    { start: [0, 3], fruits: [[2, 3], [4, 2], [2, 0]], walls: [[3, 2], [0, 1], [3, 3], [0, 4]], solution: ['L', 'D', 'D', 'R', 'R', 'D', 'D', 'L', 'L', 'L', 'L', 'U', 'U'], tip: '这一关要走 13 步：先向左 1 步，再向下 2 步。', fruit: 'star' },
+    { start: [1, 0], fruits: [[0, 3], [4, 4], [2, 2]], walls: [[1, 2], [2, 1], [2, 3], [4, 1]], solution: ['U', 'R', 'R', 'R', 'R', 'D', 'D', 'D', 'D', 'L', 'L', 'U', 'U'], tip: '这一关要走 13 步：先向上 1 步，再向右 4 步。', fruit: 'star' },
+    { start: [2, 4], fruits: [[1, 1], [3, 3], [4, 0]], walls: [[3, 2], [0, 2], [4, 4], [3, 4]], solution: ['U', 'L', 'L', 'L', 'D', 'R', 'R', 'D', 'D', 'L', 'L', 'L'], tip: '这一关要走 12 步：先向上 1 步，再向左 3 步。', fruit: 'star' },
+    { start: [0, 2], fruits: [[2, 0], [4, 3], [3, 2]], walls: [[2, 2], [2, 3], [1, 2], [3, 1]], solution: ['L', 'L', 'D', 'D', 'D', 'D', 'R', 'R', 'R', 'R', 'U', 'L', 'L'], tip: '这一关要走 13 步：先向左 2 步，再向下 4 步。', fruit: 'star' },
+    { start: [4, 3], fruits: [[0, 4], [0, 1]], walls: [[0, 2], [3, 2], [1, 0], [3, 4]], solution: ['U', 'U', 'R', 'U', 'U', 'L', 'D', 'L', 'L', 'U'], tip: '这一关要走 10 步：先向上 2 步，再向右 1 步。' },
+    { start: [2, 4], fruits: [[1, 2], [0, 2]], walls: [[2, 1], [2, 0], [2, 3], [3, 4]], solution: ['U', 'U', 'L', 'D', 'L', 'L', 'L', 'U', 'R', 'R'], tip: '这一关要走 10 步：先向上 2 步，再向左 1 步。' },
+    { start: [4, 1], fruits: [[1, 4], [3, 3]], walls: [[1, 2], [4, 0], [2, 2], [0, 2]], solution: ['R', 'R', 'R', 'U', 'U', 'U', 'U', 'L', 'D', 'D', 'D'], tip: '这一关要走 11 步：先向右 3 步，再向上 4 步。' },
+    { start: [3, 0], fruits: [[3, 4], [1, 2]], walls: [[2, 2], [2, 0], [3, 2], [3, 1]], solution: ['D', 'R', 'R', 'R', 'R', 'U', 'U', 'U', 'U', 'L', 'D', 'L'], tip: '这一关要走 12 步：先向下 1 步，再向右 4 步。' },
+    { start: [4, 1], fruits: [[1, 4], [2, 1]], walls: [[4, 0], [2, 2], [3, 0], [4, 4]], solution: ['R', 'R', 'U', 'R', 'U', 'U', 'U', 'L', 'D', 'L', 'L', 'D'], tip: '这一关要走 12 步：先向右 2 步，再向上 1 步。' },
+    { start: [3, 0], fruits: [[1, 2], [0, 3]], walls: [[4, 0], [4, 2], [2, 0], [0, 4]], solution: ['R', 'R', 'R', 'U', 'L', 'U', 'L', 'L', 'U', 'R', 'R', 'R'], tip: '这一关要走 12 步：先向右 3 步，再向上 1 步。' },
+    { start: [4, 2], fruits: [[0, 2], [3, 4]], walls: [[2, 0], [0, 4], [4, 1], [0, 0]], solution: ['U', 'U', 'U', 'L', 'U', 'R', 'R', 'D', 'D', 'D', 'D', 'R', 'U'], tip: '这一关要走 13 步：先向上 3 步，再向左 1 步。' },
+    { start: [3, 4], fruits: [[0, 1], [4, 2]], walls: [[4, 3], [4, 4], [2, 3], [1, 1]], solution: ['U', 'U', 'U', 'L', 'L', 'L', 'L', 'D', 'D', 'R', 'D', 'D', 'R'], tip: '这一关要走 13 步：先向上 3 步，再向左 4 步。' },
+    { start: [1, 4], fruits: [[1, 0], [4, 4]], walls: [[3, 1], [3, 3], [1, 1], [1, 3]], solution: ['U', 'L', 'L', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'R', 'R', 'R'], tip: '这一关要走 13 步：先向上 1 步，再向左 4 步。' },
+    { start: [4, 3], fruits: [[0, 1], [3, 1]], walls: [[1, 1], [1, 3], [3, 2], [4, 4]], solution: ['U', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'U'], tip: '这一关要走 15 步：先向上 2 步，再向右 1 步。' },
+    { start: [3, 0], fruits: [[1, 0], [3, 3]], walls: [[4, 4], [3, 4], [2, 0], [4, 2]], solution: ['D', 'R', 'U', 'U', 'U', 'L', 'U', 'R', 'R', 'D', 'D', 'D', 'R'], tip: '这一关要走 13 步：先向下 1 步，再向右 1 步。' },
+    { start: [4, 2], fruits: [[0, 3], [1, 3]], walls: [[2, 1], [4, 1], [3, 2], [2, 2], [2, 3]], solution: ['R', 'R', 'U', 'U', 'U', 'U', 'L', 'L', 'L', 'L', 'D', 'R', 'R', 'R'], tip: '这一关要走 14 步：先向右 2 步，再向上 4 步。' },
+    { start: [1, 0], fruits: [[2, 4], [3, 0]], walls: [[3, 2], [2, 2], [2, 3], [2, 0], [3, 1]], solution: ['R', 'R', 'R', 'U', 'R', 'D', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'U'], tip: '这一关要走 14 步：先向右 3 步，再向上 1 步。' },
+    { start: [1, 0], fruits: [[4, 4], [0, 1]], walls: [[4, 2], [2, 2], [3, 2], [0, 0], [2, 1]], solution: ['R', 'R', 'R', 'D', 'D', 'D', 'R', 'U', 'U', 'U', 'U', 'L', 'L', 'L'], tip: '这一关要走 14 步：先向右 3 步，再向下 3 步。' },
+    { start: [1, 0], fruits: [[4, 3], [3, 3]], walls: [[2, 1], [0, 3], [2, 2], [2, 3], [0, 1]], solution: ['R', 'R', 'R', 'R', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'U', 'R', 'R', 'R'], tip: '这一关要走 15 步：先向右 4 步，再向下 3 步。' },
+    { start: [0, 2], fruits: [[4, 2], [1, 1]], walls: [[1, 3], [0, 4], [2, 3], [2, 4], [0, 3]], solution: ['D', 'D', 'D', 'R', 'R', 'D', 'L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R', 'D'], tip: '这一关要走 16 步：先向下 3 步，再向右 2 步。' },
+    { start: [2, 0], fruits: [[2, 4], [3, 1], [4, 2]], walls: [[0, 4], [0, 1], [1, 0], [1, 2], [1, 3], [4, 4]], solution: ['R', 'R', 'R', 'R', 'D', 'L', 'L', 'L', 'L', 'D', 'R', 'R'], tip: '这一关要走 12 步：先向右 4 步，再向下 1 步。', fruit: 'star' },
+    { start: [3, 0], fruits: [[2, 3], [0, 4], [0, 2]], walls: [[1, 0], [3, 1], [4, 0], [3, 2], [1, 1], [0, 1]], solution: ['U', 'R', 'R', 'R', 'D', 'R', 'U', 'U', 'U', 'L', 'D', 'L', 'U'], tip: '这一关要走 13 步：先向上 1 步，再向右 3 步。', fruit: 'star' },
+    { start: [4, 0], fruits: [[4, 4], [2, 1], [3, 2]], walls: [[0, 4], [1, 1], [1, 0], [3, 3], [1, 2], [1, 4]], solution: ['R', 'R', 'R', 'R', 'U', 'U', 'L', 'L', 'L', 'L', 'D', 'R', 'R'], tip: '这一关要走 13 步：先向右 4 步，再向上 2 步。', fruit: 'star' },
+    { start: [1, 0], fruits: [[4, 2], [2, 2], [0, 3]], walls: [[1, 1], [1, 3], [4, 3], [4, 4], [3, 3], [0, 1]], solution: ['D', 'D', 'D', 'R', 'R', 'U', 'L', 'U', 'R', 'R', 'R', 'U', 'U', 'L'], tip: '这一关要走 14 步：先向下 3 步，再向右 2 步。', fruit: 'star' },
+    { start: [0, 0], fruits: [[4, 1], [3, 4], [1, 3]], walls: [[3, 3], [1, 1], [0, 1], [0, 2], [3, 1], [2, 3]], solution: ['D', 'D', 'D', 'D', 'R', 'R', 'R', 'R', 'U', 'U', 'U', 'U', 'L', 'D'], tip: '这一关要走 14 步：先向下 4 步，再向右 4 步。', fruit: 'star' },
+    { start: [0, 4], fruits: [[4, 3], [2, 1], [2, 2]], walls: [[2, 3], [3, 2], [1, 3], [0, 0], [3, 3], [2, 0]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'U', 'R', 'U', 'U', 'U', 'R', 'D', 'D'], tip: '这一关要走 16 步：先向下 4 步，再向左 4 步。', fruit: 'star' },
+    { start: [0, 0], fruits: [[4, 1], [1, 4], [3, 3]], walls: [[2, 2], [3, 2], [1, 2], [1, 1], [0, 2], [2, 1]], solution: ['D', 'D', 'D', 'D', 'R', 'R', 'R', 'R', 'U', 'U', 'U', 'U', 'L', 'D', 'D', 'D'], tip: '这一关要走 16 步：先向下 4 步，再向右 4 步。', fruit: 'star' },
+    { start: [0, 4], fruits: [[4, 3], [1, 0], [1, 3]], walls: [[3, 1], [2, 1], [3, 2], [1, 1], [1, 2], [2, 2]], solution: ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R', 'R', 'R', 'D'], tip: '这一关要走 16 步：先向下 4 步，再向左 4 步。', fruit: 'star' },
+    { start: [4, 4], fruits: [[4, 1], [0, 1], [2, 4]], walls: [[1, 1], [2, 1], [4, 3], [1, 2], [4, 2], [1, 3]], solution: ['U', 'L', 'L', 'L', 'D', 'L', 'U', 'U', 'U', 'U', 'R', 'R', 'R', 'R', 'D', 'D'], tip: '这一关要走 16 步：先向上 1 步，再向左 3 步。', fruit: 'star' },
+    { start: [4, 4], fruits: [[1, 2], [0, 3], [1, 3]], walls: [[2, 0], [3, 0], [3, 1], [4, 3], [4, 2], [2, 1]], solution: ['U', 'L', 'L', 'U', 'U', 'L', 'L', 'U', 'R', 'R', 'R', 'R', 'D', 'D', 'L', 'U'], tip: '这一关要走 16 步：先向上 1 步，再向左 2 步。', fruit: 'star' },
+    { start: [0, 0], fruits: [[1, 4], [3, 2], [3, 3]], walls: [[4, 1], [1, 1], [3, 1], [2, 1], [3, 0], [1, 0]], solution: ['R', 'R', 'R', 'R', 'D', 'D', 'D', 'D', 'L', 'L', 'U', 'U', 'U', 'R', 'D', 'D'], tip: '这一关要走 16 步：先向右 4 步，再向下 4 步。', fruit: 'star' },
+    { start: [2, 4], fruits: [[4, 0], [0, 2], [2, 2]], walls: [[3, 2], [2, 3], [1, 1], [2, 1], [3, 3], [3, 1]], solution: ['D', 'D', 'L', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'R', 'R', 'R', 'R', 'D', 'L', 'L', 'D'], tip: '这一关要走 18 步：先向下 2 步，再向左 4 步。', fruit: 'star' },
+    { start: [0, 0], fruits: [[4, 2], [0, 4], [3, 1]], walls: [[4, 4], [3, 2], [2, 4], [3, 4], [1, 2], [2, 2]], solution: ['D', 'D', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'R', 'U', 'L', 'L', 'L', 'D', 'D', 'D'], tip: '这一关要走 18 步：先向下 4 步，再向右 3 步。', fruit: 'star' },
+    { start: [0, 1], fruits: [[4, 1], [3, 2], [1, 4]], walls: [[1, 3], [2, 4], [2, 3], [3, 1], [0, 0], [2, 1]], solution: ['D', 'L', 'D', 'D', 'D', 'R', 'R', 'R', 'R', 'U', 'L', 'L', 'U', 'U', 'U', 'R', 'R', 'D'], tip: '这一关要走 18 步：先向下 1 步，再向左 1 步。', fruit: 'star' },
+    { start: [3, 0], fruits: [[3, 3], [2, 4], [1, 0]], walls: [[2, 0], [1, 1], [1, 2], [1, 3]], solution: ['D', 'R', 'R', 'R', 'R', 'U', 'L', 'L', 'L', 'U', 'R', 'R', 'R', 'U', 'U', 'L', 'L', 'L', 'L', 'D'], tip: '这一关要走 20 步：先向下 1 步，再向右 4 步。', fruit: 'star' },
+    { start: [4, 1], fruits: [[0, 2], [4, 4], [2, 3]], walls: [[2, 1], [3, 1], [3, 3], [1, 1]], solution: ['L', 'U', 'U', 'U', 'U', 'R', 'R', 'R', 'R', 'D', 'D', 'D', 'D', 'L', 'L', 'U', 'U', 'U', 'R', 'D'], tip: '这一关要走 20 步：先向左 1 步，再向上 4 步。', fruit: 'star' },
+  ];
+
+  const CHAPTERS = [
+    { name: '出发' }, { name: '拐个弯' }, { name: '石头路' }, { name: '双份果子' },
+    { name: '小小迷宫' }, { name: '星星雨' }, { name: '绕远路' }, { name: '终章挑战' }
+  ];
+  const LEVELS_PER_CHAPTER = 16;
+
+  const SAVE_KEY = 'robot-fruit-save-v1';
+
+  /* ================= 图形 ================= */
+
+  const APPLE_SVG = [
+    '<svg viewBox="0 0 100 100" aria-hidden="true">',
+    '<path d="M50 33c-6-7-17-9-25-4-9 6-12 20-8 32 4 13 15 23 25 23 3 0 5-1 8-1s5 1 8 1c10 0 21-10 25-23 4-12 1-26-8-32-8-5-19-3-25 4Z" fill="#F0483F"/>',
+    '<path d="M42 40c-8 2-13 10-12 19" stroke="#FF9A93" stroke-width="6" stroke-linecap="round" fill="none" opacity=".7"/>',
+    '<path d="M50 34c1-8 5-14 12-18" stroke="#8A5A3B" stroke-width="5" stroke-linecap="round" fill="none"/>',
+    '<path d="M57 19c6-7 16-8 21-4-2 8-10 13-17 12Z" fill="#4CAF7D"/>',
+    '</svg>'
+  ].join('');
+
+  const STAR_SVG = [
+    '<svg viewBox="0 0 100 100" aria-hidden="true">',
+    '<path d="M50 8 63 36 94 40 71 62 77 93 50 78 23 93 29 62 6 40 37 36Z" fill="#FFC93C" stroke="#F2A600" stroke-width="4" stroke-linejoin="round"/>',
+    '<path d="M50 22 57 38 74 40 61 52" stroke="#FFE79A" stroke-width="5" stroke-linecap="round" fill="none"/>',
+    '</svg>'
+  ].join('');
+
+  const ROCK_SVG = [
+    '<svg viewBox="0 0 100 100" aria-hidden="true">',
+    '<path d="M24 82c-9-7-13-18-10-29 2-11 11-19 22-21 6-12 22-18 35-12 13 6 19 19 17 31 8 7 9 19 2 27-7 9-20 9-30 6-6 6-16 7-23 3Z" fill="#B9AE9D" stroke="#95897A" stroke-width="3" stroke-linejoin="round"/>',
+    '<path d="M30 45c4-10 14-16 24-15 8 1 15 6 18 13-6 4-14 6-22 4-8-2-14-1-20-2Z" fill="#D8D0C2"/>',
+    '<path d="M46 70c2 4 3 7 2 10" stroke="#95897A" stroke-width="2.6" stroke-linecap="round" fill="none"/>',
+    '<circle cx="63" cy="53" r="2.6" fill="#95897A" opacity=".7"/>',
+    '</svg>'
+  ].join('');
+
+  const ROBOT_SVG = [
+    '<svg viewBox="0 0 100 100" aria-hidden="true">',
+    '<ellipse cx="50" cy="92" rx="26" ry="4" fill="#000" opacity=".07"/>',
+    '<path d="M50 20v8" stroke="#2E9BC4" stroke-width="3" stroke-linecap="round"/>',
+    '<circle cx="50" cy="14" r="5.5" fill="#FFC93C" stroke="#E9A800" stroke-width="2"/>',
+    '<rect x="15" y="44" width="8" height="20" rx="4" fill="#5EC2EA"/>',
+    '<rect x="77" y="44" width="8" height="20" rx="4" fill="#5EC2EA"/>',
+    '<rect x="23" y="27" width="54" height="52" rx="19" fill="#7FD3F7" stroke="#2E9BC4" stroke-width="3"/>',
+    '<rect x="31" y="36" width="38" height="27" rx="11" fill="#FFFDF6"/>',
+    '<circle cx="42" cy="48" r="4.6" fill="#33384A"/>',
+    '<circle cx="58" cy="48" r="4.6" fill="#33384A"/>',
+    '<circle cx="43.6" cy="46.4" r="1.5" fill="#fff"/>',
+    '<circle cx="59.6" cy="46.4" r="1.5" fill="#fff"/>',
+    '<path d="M43 56c2.4 2.6 6 3.8 9 1.4" stroke="#33384A" stroke-width="2.6" stroke-linecap="round" fill="none"/>',
+    '<circle cx="34" cy="57" r="3" fill="#FF9AA8" opacity=".55"/>',
+    '<circle cx="66" cy="57" r="3" fill="#FF9AA8" opacity=".55"/>',
+    '<rect x="40" y="69" width="20" height="4" rx="2" fill="#BFE9FB"/>',
+    '<rect x="26" y="78" width="18" height="9" rx="4.5" fill="#3D4657"/>',
+    '<rect x="56" y="78" width="18" height="9" rx="4.5" fill="#3D4657"/>',
+    '</svg>'
+  ].join('');
+
+  /* ================= 元素 ================= */
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+
+  const boardEl = $('#board');
+  const robotEl = $('#robot');
+  const robotInner = $('#robotInner');
+  const programEl = $('#program');
+  const hintEl = $('#hint');
+  const runBtn = $('#run');
+  const clearBtn = $('#clear');
+  const hintBtn = $('#hintBtn');
+  const levelTag = $('#levelTag');
+  const starsEl = $('#stars');
+  const starCount = $('#starCount');
+  const winEl = $('#win');
+  const winTitle = $('#winTitle');
+  const winSub = $('#winSub');
+  const nextBtn = $('#nextBtn');
+  const againBtn = $('#againBtn');
+  const soundBtn = $('#sound');
+  const helpBtn = $('#help');
+  const helpPanel = $('#helpPanel');
+  const helpClose = $('#helpClose');
+  const levelPick = $('#levelPick');
+  const chapterTabs = $('#chapterTabs');
+  const pickSummary = $('#pickSummary');
+
+  /* ================= 状态 ================= */
+
+  let levelIndex = 0;
+  let program = [];
+  let pos = { r: 0, c: 0 };
+  let collected = new Set();
+  let cells = [];
+  let fruitEls = [];
+  let running = false;
+  let runToken = 0;
+  let soundOn = true;
+  let save = { completed: new Array(LEVELS.length).fill(false) };
+
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && Array.isArray(data.completed)) {
+        save.completed = LEVELS.map((_, i) => !!data.completed[i]);
+      }
+    }
+  } catch (e) { /* 忽略存储异常 */ }
+
+  /* ================= 声音 ================= */
+
+  let audioCtx = null;
+
+  function ctx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function tone(freq, dur, type, vol, delay) {
+    if (!soundOn) return;
+    const ac = ctx();
+    if (!ac) return;
+    const t = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(vol || 0.07, t + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(gain).connect(ac.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.03);
+  }
+
+  const sfx = {
+    move: () => tone(540, 0.09, 'triangle', 0.045),
+    collect: () => { tone(680, 0.1, 'sine', 0.08); tone(920, 0.14, 'sine', 0.07, 0.09); },
+    bump: () => { tone(150, 0.16, 'sawtooth', 0.05); tone(110, 0.22, 'sawtooth', 0.045, 0.1); },
+    nope: () => tone(300, 0.18, 'triangle', 0.05),
+    tap: () => tone(760, 0.05, 'sine', 0.035),
+    win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.07, i * 0.11)); }
+  };
+
+  function speak(text) {
+    if (!soundOn) return;
+    try {
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = 1;
+      u.pitch = 1.15;
+      u.volume = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* 忽略 */ }
+  }
+
+  /* ================= 关卡 ================= */
+
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  function isWall(r, c) {
+    return LEVELS[levelIndex].walls.some(([wr, wc]) => wr === r && wc === c);
+  }
+
+  function buildBoard(level) {
+    boardEl.querySelectorAll('.cell').forEach((el) => el.remove());
+    cells = [];
+    fruitEls = [];
+
+    for (let r = 0; r < N; r++) {
+      const row = [];
+      for (let c = 0; c < N; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + ((r + c) % 2 ? ' alt' : '');
+
+        if (isWall(r, c)) {
+          cell.classList.add('wall');
+          cell.innerHTML = ROCK_SVG;
+        }
+
+        const fi = level.fruits.findIndex(([fr, fc]) => fr === r && fc === c);
+        if (fi >= 0) {
+          const fruit = document.createElement('div');
+          fruit.className = 'fruit';
+          fruit.dataset.idx = String(fi);
+          fruit.innerHTML = level.fruit === 'star' ? STAR_SVG : APPLE_SVG;
+          fruit.style.animationDelay = (fi * 0.4) + 's';
+          cell.appendChild(fruit);
+          fruitEls[fi] = fruit;
+        }
+
+        boardEl.appendChild(cell);
+        row.push(cell);
+      }
+      cells.push(row);
+    }
+  }
+
+  function placeRobot(instant) {
+    const cell = cells[pos.r] && cells[pos.r][pos.c];
+    if (!cell) return;
+
+    if (instant) robotEl.style.transition = 'none';
+
+    const br = boardEl.getBoundingClientRect();
+    const cr = cell.getBoundingClientRect();
+    robotEl.style.width = cr.width + 'px';
+    robotEl.style.height = cr.height + 'px';
+    robotEl.style.transform = 'translate(' + (cr.left - br.left) + 'px,' + (cr.top - br.top) + 'px)';
+
+    if (instant) {
+      void robotEl.offsetWidth;
+      robotEl.style.transition = '';
+    }
+  }
+
+  function loadLevel(index, opts) {
+    opts = opts || {};
+    levelIndex = index;
+    runToken++;
+    running = false;
+    program = [];
+    collected.clear();
+    pos = { r: LEVELS[index].start[0], c: LEVELS[index].start[1] };
+
+    buildBoard(LEVELS[index]);
+    robotEl.classList.remove('happy', 'bump');
+    robotInner.innerHTML = ROBOT_SVG;
+
+    renderProgram();
+    updateHud();
+    updateRunState();
+    setBusy(false);
+    setHint(LEVELS[index].tip);
+
+    winEl.classList.remove('show');
+    winEl.setAttribute('aria-hidden', 'true');
+    helpPanel.classList.remove('show');
+    helpPanel.setAttribute('aria-hidden', 'true');
+
+    placeRobot(true);
+
+    if (!opts.silent) speak(LEVELS[index].tip);
+  }
+
+  function updateHud() {
+    levelTag.innerHTML = '第 <b>' + (levelIndex + 1) + '</b> 关 / ' + LEVELS.length;
+    updateStarCount(false);
+  }
+
+  function updateStarCount(pop) {
+    starCount.textContent = String(save.completed.filter(Boolean).length);
+    if (pop) {
+      starsEl.classList.remove('pop');
+      void starsEl.offsetWidth;
+      starsEl.classList.add('pop');
+    }
+  }
+
+  function persist() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 忽略 */ }
+  }
+
+  /* ================= 程序区 ================= */
+
+  function renderProgram() {
+    const frag = document.createDocumentFragment();
+    const slotCount = Math.max(6, Math.min(MAX_PROGRAM, program.length + 1));
+
+    for (let i = 0; i < slotCount; i++) {
+      if (i < program.length) {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.textContent = ARROW[program[i]];
+        chip.setAttribute('aria-label', '第 ' + (i + 1) + ' 步，' + WORD[program[i]] + '，点一下删除');
+        chip.addEventListener('click', () => removeStep(i));
+        frag.appendChild(chip);
+      } else {
+        const slot = document.createElement('div');
+        slot.className = 'slot' + (i === program.length ? ' next' : '');
+        frag.appendChild(slot);
+      }
+    }
+    programEl.replaceChildren(frag);
+    programEl.scrollLeft = programEl.scrollWidth;
+  }
+
+  function addStep(dir) {
+    if (running) return;
+    if (program.length >= MAX_PROGRAM) {
+      boardEl.classList.remove('shake');
+      void boardEl.offsetWidth;
+      boardEl.classList.add('shake');
+      sfx.nope();
+      return;
+    }
+    program.push(dir);
+    sfx.tap();
+    renderProgram();
+    updateRunState();
+  }
+
+  function removeStep(i) {
+    if (running) return;
+    program.splice(i, 1);
+    sfx.tap();
+    renderProgram();
+    updateRunState();
+  }
+
+  function updateRunState() {
+    const ready = program.length > 0;
+    runBtn.disabled = false;
+    runBtn.classList.toggle('ready', ready);
+  }
+
+  function setBusy(busy) {
+    programEl.classList.toggle('locked', busy);
+    runBtn.disabled = busy;
+    clearBtn.disabled = busy;
+    hintBtn.disabled = busy;
+    document.querySelectorAll('.pad-btn').forEach((b) => { b.disabled = busy; });
+    document.body.classList.toggle('running', busy);
+  }
+
+  function setHint(text) {
+    hintEl.textContent = text;
+  }
+
+  /* ================= 游戏流程 ================= */
+
+  function resetRunState(instant) {
+    collected.clear();
+    fruitEls.forEach((el) => el && el.classList.remove('gone'));
+    pos = { r: LEVELS[levelIndex].start[0], c: LEVELS[levelIndex].start[1] };
+    robotEl.classList.remove('happy');
+    placeRobot(instant !== false);
+  }
+
+  function tryCollect(r, c) {
+    const lv = LEVELS[levelIndex];
+    const fi = lv.fruits.findIndex(([fr, fc]) => fr === r && fc === c);
+    if (fi < 0 || collected.has(fi)) return false;
+    collected.add(fi);
+    if (fruitEls[fi]) fruitEls[fi].classList.add('gone');
+    return true;
+  }
+
+  async function runProgram() {
+    if (running) return;
+    if (program.length === 0) {
+      sfx.nope();
+      setHint('先按下面的箭头，帮小机器人排一条路线吧～');
+      speak('先按箭头，排一条路线');
+      return;
+    }
+
+    running = true;
+    runToken++;
+    const token = runToken;
+
+    setBusy(true);
+    clearHintPulses();
+    sfx.tap();
+    resetRunState(true);
+    await sleep(280);
+    if (token !== runToken) return;
+
+    for (const step of program.slice()) {
+      if (token !== runToken) return;
+
+      const d = DIR[step];
+      const nr = pos.r + d[0];
+      const nc = pos.c + d[1];
+
+      if (nr < 0 || nr >= N || nc < 0 || nc >= N || isWall(nr, nc)) {
+        robotEl.classList.add('bump');
+        sfx.bump();
+        await sleep(430);
+        robotEl.classList.remove('bump');
+        if (token !== runToken) return;
+
+        setHint('哎呀，撞到啦！点一下多余的箭头，把它删掉～');
+        speak('哎呀，撞到啦');
+        await sleep(850);
+        if (token !== runToken) return;
+
+        resetRunState(true);
+        running = false;
+        setBusy(false);
+        return;
+      }
+
+      pos = { r: nr, c: nc };
+      placeRobot(false);
+      sfx.move();
+      await sleep(program.length > 10 ? 270 : 330);
+      if (token !== runToken) return;
+
+      if (tryCollect(nr, nc)) {
+        sfx.collect();
+        if (collected.size === LEVELS[levelIndex].fruits.length) {
+          await completeLevel(token);
+          return;
+        }
+      }
+    }
+
+    if (token !== runToken) return;
+    running = false;
+    setBusy(false);
+    sfx.nope();
+    setHint(collected.size > 0 ? '还差几个果子，再走几步吧！' : '还没吃到果子，再想想路线～');
+  }
+
+  async function completeLevel(token) {
+    running = false;
+    setBusy(false);
+    runBtn.disabled = true;
+    clearBtn.disabled = true;
+
+    robotEl.classList.add('happy');
+    sfx.win();
+    speak('太棒了');
+    confetti();
+
+    if (!save.completed[levelIndex]) {
+      save.completed[levelIndex] = true;
+      persist();
+    }
+    updateStarCount(true);
+
+    await sleep(850);
+    if (token !== runToken) return;
+    showWin();
+  }
+
+  function showWin() {
+    const last = levelIndex === LEVELS.length - 1;
+    const chapter = Math.floor(levelIndex / LEVELS_PER_CHAPTER);
+    const chapterDone = !last && (levelIndex + 1) % LEVELS_PER_CHAPTER === 0;
+
+    if (last) {
+      winTitle.textContent = '全部 ' + LEVELS.length + ' 关通关！';
+      winSub.textContent = '你收集了 ' + save.completed.filter(Boolean).length + ' 颗星星，是超级小程序员！';
+      nextBtn.textContent = '再玩一遍 ↺';
+    } else if (chapterDone) {
+      winTitle.textContent = '第 ' + (chapter + 1) + ' 章通关！';
+      winSub.textContent = '新章节「' + CHAPTERS[chapter + 1].name + '」已解锁，继续出发吧！';
+      nextBtn.textContent = '进入下一章 ▶';
+    } else {
+      winTitle.textContent = '太棒啦！';
+      winSub.textContent = '第 ' + (levelIndex + 1) + ' 关完成，得到一颗星星 ★';
+      nextBtn.textContent = '下一关 ▶';
+    }
+    winEl.classList.add('show');
+    winEl.setAttribute('aria-hidden', 'false');
+  }
+
+  function hideWin() {
+    winEl.classList.remove('show');
+    winEl.setAttribute('aria-hidden', 'true');
+  }
+
+  /* ================= 提示 ================= */
+
+  function clearHintPulses() {
+    document.querySelectorAll('.pad-btn.pulse, .btn-clear.pulse').forEach((el) => el.classList.remove('pulse'));
+  }
+
+  function giveHint() {
+    if (running) return;
+    const sol = LEVELS[levelIndex].solution;
+    const isPrefix = program.length <= sol.length && program.every((s, i) => s === sol[i]);
+
+    if (isPrefix && program.length < sol.length) {
+      const dir = sol[program.length];
+      const btn = document.querySelector('.pad-btn[data-dir="' + dir + '"]');
+      clearHintPulses();
+      if (btn) {
+        btn.classList.add('pulse');
+        setTimeout(() => btn.classList.remove('pulse'), 2400);
+      }
+      setHint('试试按 ' + ARROW[dir] + '（' + WORD[dir] + '）');
+      speak('试试' + WORD[dir]);
+    } else if (program.length === 0) {
+      setHint('先按箭头，排一条路线吧～');
+    } else {
+      clearHintPulses();
+      clearBtn.classList.add('pulse');
+      setTimeout(() => clearBtn.classList.remove('pulse'), 2400);
+      setHint('先点「重来」清空，再跟着提示走～');
+      speak('先点重来');
+    }
+  }
+
+  /* ================= 彩带 ================= */
+
+  function confetti() {
+    const colors = ['#FFD166', '#FF6B6B', '#4ECDC4', '#A78BFA', '#5EC8F2', '#FF9FCD'];
+    const count = window.innerWidth < 500 ? 34 : 56;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('i');
+      p.className = 'confetti';
+      const size = 6 + Math.random() * 8;
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.width = size + 'px';
+      p.style.height = (size * 1.5) + 'px';
+      p.style.background = colors[i % colors.length];
+      p.style.setProperty('--dx', (Math.random() * 140 - 70) + 'px');
+      p.style.setProperty('--rot', (Math.random() * 900 - 300) + 'deg');
+      p.style.setProperty('--dur', (2 + Math.random() * 1.2) + 's');
+      p.style.setProperty('--delay', (Math.random() * 0.5) + 's');
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 3800);
+    }
+  }
+
+  /* ================= 事件 ================= */
+
+  document.querySelectorAll('.pad-btn').forEach((btn) => {
+    btn.addEventListener('click', () => addStep(btn.dataset.dir));
+  });
+
+  runBtn.addEventListener('click', runProgram);
+  hintBtn.addEventListener('click', giveHint);
+
+  clearBtn.addEventListener('click', () => {
+    if (running) return;
+    program = [];
+    renderProgram();
+    updateRunState();
+    resetRunState(true);
+    setHint(LEVELS[levelIndex].tip);
+    sfx.nope();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    hideWin();
+    if (levelIndex === LEVELS.length - 1) loadLevel(0);
+    else loadLevel(levelIndex + 1);
+  });
+
+  againBtn.addEventListener('click', () => {
+    hideWin();
+    loadLevel(levelIndex);
+  });
+
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? '🔊' : '🔇';
+    soundBtn.classList.toggle('off', !soundOn);
+    if (soundOn) {
+      sfx.tap();
+      speak('声音打开啦');
+    } else {
+      try { window.speechSynthesis.cancel(); } catch (e) { /* 忽略 */ }
+    }
+  });
+
+  function openHelp() {
+    renderLevelPick();
+    helpPanel.classList.add('show');
+    helpPanel.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeHelp() {
+    helpPanel.classList.remove('show');
+    helpPanel.setAttribute('aria-hidden', 'true');
+  }
+
+  helpBtn.addEventListener('click', openHelp);
+  helpClose.addEventListener('click', closeHelp);
+  starsEl.addEventListener('click', openHelp);
+
+  helpPanel.addEventListener('click', (e) => {
+    if (e.target === helpPanel) closeHelp();
+  });
+
+  winEl.addEventListener('click', (e) => {
+    if (e.target === winEl) hideWin();
+  });
+
+  let pickChapter = 0;
+
+  function renderLevelPick(chapter) {
+    pickChapter = typeof chapter === 'number' ? chapter : Math.floor(levelIndex / LEVELS_PER_CHAPTER);
+
+    pickSummary.textContent = '已收集 ' + save.completed.filter(Boolean).length + ' / ' + LEVELS.length + ' 颗星星';
+
+    chapterTabs.innerHTML = '';
+    CHAPTERS.forEach((ch, ci) => {
+      const b = document.createElement('button');
+      b.className = 'chapter-tab' + (ci === pickChapter ? ' active' : '');
+      b.innerHTML = '<span class="cnum">' + (ci + 1) + '</span>' + ch.name;
+      b.setAttribute('aria-label', '第 ' + (ci + 1) + ' 章 ' + ch.name);
+      b.addEventListener('click', () => renderLevelPick(ci));
+      chapterTabs.appendChild(b);
+    });
+
+    levelPick.innerHTML = '';
+    const base = pickChapter * LEVELS_PER_CHAPTER;
+    for (let i = base; i < base + LEVELS_PER_CHAPTER && i < LEVELS.length; i++) {
+      const b = document.createElement('button');
+      b.textContent = String(i + 1);
+      if (save.completed[i]) b.classList.add('done');
+      if (i === levelIndex) b.classList.add('current');
+      b.setAttribute('aria-label', '第 ' + (i + 1) + ' 关' + (save.completed[i] ? '，已获得星星' : ''));
+      b.addEventListener('click', () => {
+        closeHelp();
+        hideWin();
+        loadLevel(i);
+      });
+      levelPick.appendChild(b);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (winEl.classList.contains('show') || helpPanel.classList.contains('show')) {
+      if (e.key === 'Escape') { hideWin(); closeHelp(); }
+      return;
+    }
+    const map = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R' };
+    if (map[e.key]) {
+      e.preventDefault();
+      addStep(map[e.key]);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      runProgram();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (program.length) removeStep(program.length - 1);
+    } else if (e.key === 'r' || e.key === 'R') {
+      clearBtn.click();
+    }
+  });
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => placeRobot(true), 120);
+  });
+
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(() => {
+      if (!running) placeRobot(true);
+    });
+    ro.observe(boardEl);
+  }
+
+  /* ================= 启动 ================= */
+
+  loadLevel(0);
+
+  // 供调试 / 家长课堂演示使用
+  window.__robotGame = {
+    loadLevel: loadLevel,
+    setProgram: (arr) => { program = arr.slice(0, MAX_PROGRAM); renderProgram(); updateRunState(); },
+    run: runProgram,
+    get state() {
+      return { level: levelIndex, program: program.slice(), collected: collected.size };
+    }
+  };
+})();
+</script>
+</body>
 </html>
