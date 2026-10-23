@@ -662,8 +662,11 @@
   .toggle-pill[aria-pressed="true"]::before { background: var(--cinnabar); }
   .toggle-pill:hover { transform: translateY(-1px); }
 
-  .book-note { display: flex; align-items: center; gap: 8px; margin: 17px 0 8px; color: var(--ink-faint); font-size: 10px; letter-spacing: .05em; }
-  .book-note::before { content: "○"; color: var(--gold); font-size: 9px; }
+  .book-note { display: flex; align-items: center; gap: 8px; margin: 17px 0 8px; color: var(--ink-faint); font-size: 10px; letter-spacing: .05em; transition: color .16s; }
+  .book-note::before { content: "○"; color: var(--gold); font-size: 9px; transition: color .16s; }
+  .book-note.is-speaking { color: var(--ink); }
+  .book-note.is-speaking::before { content: "◉"; color: var(--cinnabar); animation: voicePulse 1s ease-in-out infinite; }
+  @keyframes voicePulse { 0%, 100% { opacity: .45; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.14); } }
   .mnemonic-book { display: flex; flex-direction: column; gap: 30px; padding-top: 12px; }
   .book-zone { --zc: var(--jade); }
   .book-zone-head { display: flex; align-items: center; gap: 12px; padding: 0 2px 10px; border-bottom: 1px solid var(--line); }
@@ -687,6 +690,12 @@
   }
   .book-line:hover { background: rgba(255, 253, 247, .58); }
   .book-line.revealed { background: rgba(252, 249, 241, .8); }
+  .book-line.is-speaking {
+    background: color-mix(in srgb, var(--zc) 7%, #FFFDF8);
+    box-shadow: inset 3px 0 0 var(--zc);
+  }
+  .book-line.is-speaking .line-mnemonic { color: var(--zc); }
+  .book-line.is-speaking .line-key { border-color: var(--zc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--zc) 13%, transparent); }
   .line-key {
     width: 42px;
     height: 42px;
@@ -708,6 +717,10 @@
   .line-roots .roots-label { font-family: var(--sans); font-size: 9px; letter-spacing: .03em; color: var(--ink-faint); opacity: .75; margin-right: 4px; }
   .line-side { display: flex; align-items: center; gap: 9px; color: var(--ink-faint); font-size: 9px; letter-spacing: .04em; white-space: nowrap; }
   .line-side .line-code { color: var(--ink-faint); font-family: var(--serif); }
+  .line-listen { display: inline-flex; align-items: center; gap: 3px; color: var(--zc); opacity: .7; transition: opacity .16s, color .16s; }
+  .line-listen svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .book-line:hover .line-listen, .book-line:focus-visible .line-listen, .book-line.is-speaking .line-listen { opacity: 1; }
+  .book-line.is-speaking .line-listen { color: var(--cinnabar); }
   .line-side .reveal-hint { color: var(--cinnabar); opacity: 0; transition: opacity .16s; }
   .book-line:hover .reveal-hint, .book-line:focus-visible .reveal-hint { opacity: 1; }
   .book-line.revealed .reveal-hint { opacity: 1; color: var(--jade); }
@@ -1313,7 +1326,7 @@
       <div>
         <p class="eyebrow">口诀簿 · 廿五句</p>
         <h1>读诀，寻键</h1>
-        <p class="page-lede">五笔口诀把字根串成有韵律的短句。先读熟，再遮住键位默想；想不起来时，点开看一眼也无妨。</p>
+        <p class="page-lede">五笔口诀把字根串成有韵律的短句。按字母键 A–Z 就能听对应的口诀；先读熟，再遮住键位默想。</p>
       </div>
       <div class="page-action book-actions">
         <button class="toggle-pill" type="button" id="bookMaskToggle" aria-pressed="false">遮住键位</button>
@@ -1323,7 +1336,7 @@
         </button>
       </div>
     </div>
-    <p class="book-note" id="bookNote">点击上方「遮住键位」，再逐句默想与翻看。</p>
+    <p class="book-note" id="bookNote">按字母键 A–Z 听对应口诀；点击任意一句也可朗读。</p>
     <div class="mnemonic-book" id="mnemonicBook"></div>
   </section>
 
@@ -1360,7 +1373,7 @@
         <div class="question-card" id="questionCard" aria-live="polite">
           <div class="q-topline">
             <span class="q-type" id="qType">看根寻键</span>
-            <button class="hint-btn" type="button" id="hintBtn">提示 <kbd>H</kbd></button>
+            <button class="hint-btn" type="button" id="hintBtn" title="快捷键：? 或 /">提示 <kbd>?</kbd></button>
           </div>
           <div class="q-body" id="qBody"></div>
           <div class="q-result" id="qResult" hidden></div>
@@ -1368,7 +1381,7 @@
 
         <div class="keyboard-wrap">
           <div class="keyboard" id="keyboard" aria-label="五笔键位键盘"></div>
-          <p class="keyboard-note">直接按键盘字母作答 · 亦可点按屏幕键位 · <kbd>H</kbd> 提示</p>
+          <p class="keyboard-note">直接按键盘字母作答 · 亦可点按屏幕键位 · <kbd>?</kbd> 或 <kbd>/</kbd> 提示</p>
         </div>
       </div>
 
@@ -1717,7 +1730,8 @@
     save.sound = !save.sound;
     persist();
     updateSoundButtons();
-    if (save.sound) playHint();
+    if (!save.sound) stopBookSpeech(true);
+    else playHint();
     toast(save.sound ? '音效已开启' : '音效已关闭');
   }
 
@@ -1865,6 +1879,7 @@
 
   /* ======================= 视图切换 ======================= */
   function showView(name) {
+    if (name !== 'book') stopBookSpeech(false);
     state.view = name;
     $all('.view').forEach(view => { view.hidden = view.id !== 'view-' + name; });
     document.body.classList.toggle('in-game', name === 'game');
@@ -1954,7 +1969,94 @@
   }
 
   /* ======================= 口诀簿 ======================= */
+  let bookSpeechToken = 0;
+
+  function bookDefaultNote() {
+    return state.bookMasked
+      ? '按字母键 A–Z 听对应口诀；点击任意一句可翻看键位。'
+      : '按字母键 A–Z 听对应口诀；点击任意一句也可朗读。';
+  }
+
+  function pickChineseVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    const chinese = voices.filter(v => /^zh([-_]|$)/i.test(v.lang || '') || /chinese|mandarin|普通话|中文/i.test((v.name || '') + ' ' + (v.lang || '')));
+    return chinese.find(v => /^zh[-_]?cn/i.test(v.lang || '')) || chinese[0] || null;
+  }
+
+  function stopBookSpeech(restoreNote = true) {
+    bookSpeechToken += 1;
+    try {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    } catch (err) { /* 不支持语音合成时静默忽略 */ }
+    $all('.book-line.is-speaking').forEach(line => line.classList.remove('is-speaking'));
+    const note = $('#bookNote');
+    if (note) {
+      note.classList.remove('is-speaking');
+      if (restoreNote && state.view === 'book') note.textContent = bookDefaultNote();
+    }
+  }
+
+  function speakBookKey(key) {
+    if (!KEYS[key]) { toast('Z 键不属于五笔字根键'); return; }
+    if (!save.sound) { toast('音效已关闭，点右上角声音按钮后再朗读'); return; }
+    const line = document.querySelector(`.book-line[data-book-key="${key}"]`);
+    if (!line) return;
+
+    stopBookSpeech(false);
+    const token = ++bookSpeechToken;
+    line.classList.add('is-speaking');
+    const note = $('#bookNote');
+    if (note) {
+      note.classList.add('is-speaking');
+      note.textContent = `正在朗读 ${key} 键 · ${KEYS[key].mnemonic}`;
+    }
+
+    const rect = line.getBoundingClientRect();
+    if (rect.top < 78 || rect.bottom > window.innerHeight - 26) {
+      line.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    }
+
+    const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+    if (!supported) {
+      toast('当前浏览器不支持语音朗读');
+      window.setTimeout(() => { if (token === bookSpeechToken) stopBookSpeech(true); }, 1600);
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(KEYS[key].mnemonic);
+      const voice = pickChineseVoice();
+      utter.lang = 'zh-CN';
+      utter.rate = .82;
+      utter.pitch = 1;
+      utter.volume = 1;
+      if (voice) utter.voice = voice;
+
+      let safetyTimer = 0;
+      const finish = (message) => {
+        window.clearTimeout(safetyTimer);
+        if (token !== bookSpeechToken) return;
+        stopBookSpeech(true);
+        if (message) toast(message);
+      };
+      utter.onend = () => finish();
+      utter.onerror = (event) => {
+        if (token !== bookSpeechToken) return;
+        const canceled = event && (event.error === 'canceled' || event.error === 'interrupted');
+        finish(canceled ? '' : '朗读未能播放，请检查系统的中文语音设置');
+      };
+      safetyTimer = window.setTimeout(() => finish(), 15000);
+      window.speechSynthesis.speak(utter);
+    } catch (err) {
+      stopBookSpeech(true);
+      toast('朗读未能播放，请检查系统的中文语音设置');
+    }
+  }
+
   function renderBook() {
+    stopBookSpeech(false);
     const html = [];
     for (let z = 1; z <= 5; z++) {
       const zone = ZONES[z];
@@ -1969,11 +2071,10 @@
           ${zone.keys.map(k => {
             const data = KEYS[k];
             const masked = state.bookMasked && !state.revealedBookKeys.has(k);
-            const tag = state.bookMasked ? 'button' : 'div';
-            const attrs = state.bookMasked
-              ? `type="button" data-book-key="${k}" aria-label="${masked ? '口诀：' + escapeHtml(data.mnemonic) + '，键位已遮住' : k + ' 键口诀：' + escapeHtml(data.mnemonic)}" aria-pressed="${masked ? 'false' : 'true'}"`
-              : '';
-            return `<${tag} class="book-line z${z}${state.bookMasked ? ' can-reveal' : ''}${masked ? '' : ' revealed'}" ${attrs}>
+            const label = state.bookMasked
+              ? (masked ? `口诀：${data.mnemonic}，键位已遮住` : `${k} 键口诀：${data.mnemonic}，点击收回键位`)
+              : `朗读 ${k} 键口诀：${data.mnemonic}`;
+            return `<button type="button" class="book-line z${z}${state.bookMasked ? ' can-reveal' : ' can-listen'}${masked ? '' : ' revealed'}" data-book-key="${k}" aria-label="${escapeHtml(label)}"${state.bookMasked ? ` aria-pressed="${masked ? 'false' : 'true'}"` : ''}>
               <span class="line-key${masked ? ' hidden-key' : ''}">${masked ? '？' : k}</span>
               <span class="line-copy">
                 <span class="line-mnemonic">${escapeHtml(data.mnemonic)}</span>
@@ -1981,17 +2082,18 @@
               </span>
               <span class="line-side">
                 <span class="line-code">${masked ? '' : '码位 ' + data.code}</span>
-                <span class="reveal-hint">${masked ? '翻看' : '已翻开'}</span>
+                ${state.bookMasked
+                  ? `<span class="reveal-hint">${masked ? '翻看' : '已翻开'}</span>`
+                  : `<span class="line-listen" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M2.5 6h2.2L8 3.3v9.4L4.7 10H2.5z"/><path d="M10.3 5.7a3.1 3.1 0 0 1 0 4.6M12.1 4a5.4 5.4 0 0 1 0 8"/></svg>听</span>`}
               </span>
-            </${tag}>`;
+            </button>`;
           }).join('')}
         </div>
       </section>`);
     }
     $('#mnemonicBook').innerHTML = html.join('');
-    $('#bookNote').textContent = state.bookMasked
-      ? '键位已遮住，点击任意一句可单独翻看；再点一次收回。'
-      : '点击上方「遮住键位」，再逐句默想与翻看。';
+    $('#bookNote').textContent = bookDefaultNote();
+    $('#bookNote').classList.remove('is-speaking');
     const toggle = $('#bookMaskToggle');
     toggle.setAttribute('aria-pressed', state.bookMasked ? 'true' : 'false');
     toggle.textContent = state.bookMasked ? '显示键位' : '遮住键位';
@@ -2101,7 +2203,7 @@
     renderProgress();
     updateCombo();
     $('#hintBtn').disabled = false;
-    $('#hintBtn').innerHTML = '提示 <kbd>H</kbd>';
+    $('#hintBtn').innerHTML = '提示 <kbd>?</kbd>';
 
     const card = $('#questionCard');
     card.classList.remove('correct', 'wrong');
@@ -2420,7 +2522,8 @@
     $('#mnemonicBook').addEventListener('click', e => {
       const line = e.target.closest('[data-book-key]');
       if (!line) return;
-      toggleBookLine(line);
+      if (state.bookMasked) toggleBookLine(line);
+      else speakBookKey(line.dataset.bookKey);
     });
 
     $('#keyDialog').addEventListener('click', e => {
@@ -2468,6 +2571,17 @@
     });
 
     window.addEventListener('keydown', e => {
+      if (state.view === 'book') {
+        if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+        if (e.repeat || $('#keyDialog').open) return;
+        const bookLetter = e.key.length === 1 ? e.key.toUpperCase() : '';
+        if (/^[A-Z]$/.test(bookLetter)) {
+          if (!KEYS[bookLetter]) { toast('Z 键不属于五笔字根键'); return; }
+          e.preventDefault();
+          speakBookKey(bookLetter);
+        }
+        return;
+      }
       if (state.view !== 'game' || !state.session) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.repeat) { e.preventDefault(); return; }
@@ -2484,7 +2598,12 @@
         return;
       }
       if (e.key === 'Escape') { e.preventDefault(); exitGame(); return; }
-      if (e.key === 'h' || e.key === 'H') { e.preventDefault(); showHint(); return; }
+      // 所有 A–Z 都是可作答的键位，提示改用 ? 或 /，避免占用 H 键。
+      if (['?', '/', '？', '／'].includes(e.key) || e.code === 'Slash' || e.code === 'NumpadDivide') {
+        e.preventDefault();
+        showHint();
+        return;
+      }
       const letter = e.key.length === 1 ? e.key.toUpperCase() : '';
       if (/^[A-Z]$/.test(letter)) {
         e.preventDefault();
@@ -2498,6 +2617,8 @@
   }
 
   /* ======================= 启动 ======================= */
+  if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+  window.addEventListener('pagehide', () => stopBookSpeech(false));
   updateSoundButtons();
   bindEvents();
   renderHome();
